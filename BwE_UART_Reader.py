@@ -7,7 +7,6 @@ import re
 import os
 from colorama import init, Fore, Style
 
-
 bwe = """
   __________         ___________
   \______   \__  _  _\_   _____/
@@ -80,18 +79,11 @@ filename = "uart_data_{}-{}-{}_-_{}-{}-{}.txt".format(now.year, now.month, now.d
 with open(filename, "w") as f:
     try:
         while 1:
-            
-            # Read from serial port, blocking
             data = sread.read(1)
-
-            # If there is more than 1 byte, read the rest
             n = sread.inWaiting()
             if n:
                 data = data + sread.read(n)
-
-            # Print the data to the console
             sys.stdout.write(data)
-            # Write the data to the file
             f.write(data) 
 
     except KeyboardInterrupt:
