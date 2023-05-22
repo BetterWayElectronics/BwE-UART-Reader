@@ -1,5 +1,5 @@
-# SerialReader
-Auto detects COM port, reads and writes serial output as binary or text.
+# BwE UART Reader
+Auto detects/selects COM port and creates a log file of each session.
 
 Designed for Windows.
 
