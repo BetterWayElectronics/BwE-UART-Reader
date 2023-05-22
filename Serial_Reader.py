@@ -2,39 +2,50 @@ import sys
 import serial
 import serial.tools.list_ports
 import time
+import datetime
+import re
+import os
+from colorama import init, Fore, Style
+
 
 bwe = """
-                    .__       .__                            .___            
-  ______ ___________|__|____  |  |_______   ____ _____     __| _/___________ 
- /  ___// __ \_  __ \  \__  \ |  |\_  __ \_/ __ \\__   \   / __ |/ __ \_  __ \\
- \___ \\\  ___/|  | \/  |/ __ \|  |_|  | \/\  ___/ / __ \_/ /_/ \  ___/|  | \/
-/____  >\___  >__|  |__(____  /____/__|    \___  >____  /\____ |\___  >__|   
-     \/     \/              \/                 \/     \/      \/    \/       
-                                   BwE <3
-     """
+  __________         ___________
+  \______   \__  _  _\_   _____/
+   |    |  _/\ \/ \/ /|    __)_ 
+   |    |   \ \     / |        \\
+   |______  /  \/\_/ /_______  /
+          \/  UART Reader    \/ 
+                                    """
      
-print bwe
+print(Fore.CYAN + Style.BRIGHT + bwe + Style.RESET_ALL)
 
+pattern = re.compile(r"^(USB-?Serial|USB Serial)\b", re.IGNORECASE)
 ports = list(serial.tools.list_ports.comports())
 auto_ports = []
+
 for port in ports:
-    if "USB Serial Port" in port[1]:
+    if pattern.search(port[1]):
         auto_ports.append(port[0])
+
 
 if auto_ports:
     if len(auto_ports) > 1:
-        print("\033[33mMultiple UART Devices Found At " + ", ".join(auto_ports) + "\033[0m\n")
+        print("Multiple UART Devices Found At " + ", ".join(auto_ports) + "\n")
         port = raw_input("Enter COM Port (Example COM4): ")
+        digits = ''.join(filter(str.isdigit, port))
+        port = 'COM' + digits[:2]
+        print("\nOpening " + port + "...\n")
     else:
-        print("\033[32mUART Reader Found At " + auto_ports[0] + "\033[0m\n")
+        print("UART Reader " + port[1] + " Found. Opening " + auto_ports[0] + "...\n")
         port = auto_ports[0]
 else:
     port = raw_input("Enter COM Port (Example COM4): ")
-
+    digits = ''.join(filter(str.isdigit, port))
+    port = 'COM' + digits[:2]
 
 if not port: 
-    print("\nError: No port specified. Exiting program.")
-    print ("\033[0m\nPress Enter to Exit...")
+    print("\nError: No Port Specified. Exiting program.")
+    print ("\nPress Enter to Exit...")
     raw_input()  
     sys.exit(1) 
         
@@ -47,52 +58,46 @@ sread.baudrate = baud
 try:
     sread.open()
 except:
-    sys.stderr.write("Error opening serial port %s\n" % (sread.portstr) )
-    sys.exit(1)
-
-# Ask the user if they want the data to be presented as binary
-binary_response = raw_input("Output & Save Serial As Hex? (y/n): ")
-
-try:
-    # Open a file to save the serial data
-    if binary_response.lower() == "y":
-        print "\nWaiting...\n"
-        with open("serial_data.bin", "wb") as f:
-            while 1:
-                # Read from serial port, blocking
-                data = sread.read(1)
-
-                # If there is more than 1 byte, read the rest
-                n = sread.inWaiting()
-                if n:
-                    data = data + sread.read(n)
-
-                # Print the data to the console
-                sys.stdout.write(data.encode("hex").upper())  #printing hexadecimal
-                # Write the data to the file
-                f.write(data)
-
-    else:
-        print "\nWaiting...\n"
-        with open("serial_data.txt", "w") as f:
-            while 1:
-                # Read from serial port, blocking
-                data = sread.read(1)
-
-                # If there is more than 1 byte, read the rest
-                n = sread.inWaiting()
-                if n:
-                    data = data + sread.read(n)
-
-                # Print the data to the console
-                sys.stdout.write(data)
-                # Write the data to the file
-                f.write(data) 
-
-except KeyboardInterrupt:
-    pass
-finally:
-    sread.close()
-    print("\n\nProgram interrupted by user. Press Enter to Exit.")
+    sys.stderr.write("\nError Opening COM Port %s. Press Enter to Exit." % sread.portstr)
     raw_input()  
     sys.exit(1) 
+
+bwe2 = """
+  __________         ___________
+  \______   \__  _  _\_   _____/
+   |    |  _/\ \/ \/ /|    __)_ 
+   |    |   \ \     / |        \\
+   |______  /  \/\_/ /_______  /
+          \/  UART Reader    \/  {} Opened...
+                                    """.format(port)
+
+os.system('cls')
+print(Fore.CYAN + Style.BRIGHT + bwe2 + Style.RESET_ALL)
+
+now = datetime.datetime.now()
+filename = "uart_data_{}-{}-{}_-_{}-{}-{}.txt".format(now.year, now.month, now.day, now.hour, now.minute, now.second)
+
+with open(filename, "w") as f:
+    try:
+        while 1:
+            
+            # Read from serial port, blocking
+            data = sread.read(1)
+
+            # If there is more than 1 byte, read the rest
+            n = sread.inWaiting()
+            if n:
+                data = data + sread.read(n)
+
+            # Print the data to the console
+            sys.stdout.write(data)
+            # Write the data to the file
+            f.write(data) 
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        sread.close()
+        print("\n\nProgram Interrupted by User. Log Saved As " + filename + "\n\nPress Enter to Exit.")
+        raw_input()  
+        sys.exit(1) 
